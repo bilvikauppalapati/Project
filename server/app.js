@@ -7,6 +7,10 @@ const animalRoutes = require('./routes/animalRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const checkInRoutes = require('./routes/checkInRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const shelterRoutes = require('./routes/shelterRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { notFound, errorHandler } = require('./middleware/error');
 const constants = require('./utils/constants');
 
@@ -27,6 +31,10 @@ app.use('/api/animals', animalRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/checkins', checkInRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/shelters', shelterRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -1,5 +1,6 @@
 module.exports = {
   ROLES: ['adopter', 'shelter', 'admin'],
+  SHELTER_KINDS: ['organisation', 'individual'],
 
   SPECIES: ['dog', 'cat', 'rabbit', 'bird', 'other'],
   SIZES: ['small', 'medium', 'large'],

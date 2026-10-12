@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const pointSchema = require('./pointSchema');
-const { ROLES, SPECIES, SIZES, ENERGY_LEVELS, HOME_TYPES, EXPERIENCE_LEVELS } = require('../utils/constants');
+const { ROLES, SHELTER_KINDS, SPECIES, SIZES, ENERGY_LEVELS, HOME_TYPES, EXPERIENCE_LEVELS } = require('../utils/constants');
 
 const preferencesSchema = new mongoose.Schema(
   {
@@ -20,6 +20,7 @@ const preferencesSchema = new mongoose.Schema(
 
 const shelterSchema = new mongoose.Schema(
   {
+    kind: { type: String, enum: SHELTER_KINDS, default: 'organisation' },
     orgName: { type: String, trim: true, maxlength: 120 },
     description: { type: String, maxlength: 2000 },
     address: { type: String, maxlength: 300 },

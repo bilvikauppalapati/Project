@@ -2,7 +2,7 @@ const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const { signToken } = require('../utils/token');
 const { requireFields, isEmail, toGeoPoint } = require('../utils/validate');
-const { SPECIES, SIZES, ENERGY_LEVELS, HOME_TYPES, EXPERIENCE_LEVELS } = require('../utils/constants');
+const { SHELTER_KINDS, SPECIES, SIZES, ENERGY_LEVELS, HOME_TYPES, EXPERIENCE_LEVELS } = require('../utils/constants');
 
 function sendAuth(res, user, status = 200) {
   res.status(status).json({ success: true, token: signToken(user), user });
@@ -33,7 +33,12 @@ exports.register = async (req, res) => {
     location,
     shelter:
       role === 'shelter'
-        ? { orgName: body.orgName || body.name, description: body.description, address: body.address }
+        ? {
+            kind: SHELTER_KINDS.includes(body.shelterKind) ? body.shelterKind : 'organisation',
+            orgName: body.orgName || body.name,
+            description: body.description,
+            address: body.address,
+          }
         : undefined,
   });
 
@@ -88,7 +93,7 @@ exports.updateMe = async (req, res) => {
 
   if (user.role === 'shelter' && body.shelter) {
     const s = body.shelter;
-    for (const field of ['orgName', 'description', 'address', 'website']) {
+    for (const field of ['kind', 'orgName', 'description', 'address', 'website']) {
       if (s[field] !== undefined) user.shelter[field] = s[field];
     }
   }

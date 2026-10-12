@@ -3,6 +3,7 @@ const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/db');
 const { initSocket } = require('./utils/socket');
+const { startCronJobs } = require('./utils/cron');
 
 const PORT = process.env.PORT || 5001;
 
@@ -16,6 +17,7 @@ async function start() {
 
   const server = http.createServer(app);
   initSocket(server);
+  startCronJobs();
 
   server.listen(PORT, () => {
     console.log(`PawShare API + socket.io running at http://localhost:${PORT}`);

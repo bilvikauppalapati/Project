@@ -5,6 +5,7 @@ const { assertId } = require('../utils/validate');
 const { toBool, toNum, toList, pagination } = require('../utils/parse');
 const { matchAnimal } = require('../utils/matching');
 const { notify } = require('../utils/notify');
+const { scheduleCheckIns } = require('../utils/checkins');
 const { APPLICATION_STATUSES } = require('../utils/constants');
 
 const ACTIVE = ['submitted', 'under_review', 'approved'];
@@ -192,6 +193,7 @@ exports.updateStatus = async (req, res) => {
   if (body.note && !isAdopter) app.shelterNote = body.note;
   app.timeline.push({ status: next, by: req.user._id, note: body.note });
   await app.save();
+  if (next === 'completed') await scheduleCheckIns(app);
 
   const animal = await Animal.findById(app.animal).select('name');
   const recipient = isAdopter ? app.shelter : app.adopter;
