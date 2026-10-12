@@ -106,6 +106,16 @@ npm run dev      # starts backend (5001) and frontend (5173) together
 
 Open **http://localhost:5173**.
 
+## One-command start
+
+```bash
+./start.sh           # frees ports, checks/starts MongoDB, installs packages if needed, starts everything, runs health checks, opens the browser
+./start.sh --seed    # same, but resets the demo data first
+./stop.sh            # stops the website and frees ports 5001 and 5173
+```
+
+`start.sh` keeps watching the backend and website and restarts them automatically if either stops responding. Logs are written to `.logs/`.
+
 ## Scripts
 
 | Where | Command | Does |
