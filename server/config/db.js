@@ -1,9 +1,5 @@
 const mongoose = require('mongoose');
 
-/**
- * Connects to MongoDB using the MONGO_URI from .env.
- * The process exits if the connection fails, because the API is useless without a database.
- */
 async function connectDB() {
   const uri = process.env.MONGO_URI;
   if (!uri) {

@@ -1,23 +1,15 @@
 const AppError = require('../utils/AppError');
 
-// 404 for any route that didn't match.
 function notFound(req, res, next) {
   next(new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404));
 }
 
-/**
- * Central error handler: every thrown error ends up here and becomes a consistent JSON response:
- *   { success: false, message: '...', details?: {...} }
- * It also translates common Mongoose/multer errors into friendly messages.
- */
-// eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   let status = err.statusCode || 500;
   let message = err.message || 'Something went wrong';
   let details = err.details;
 
   if (err.name === 'ValidationError') {
-    // Mongoose schema validation failed: list every field's message.
     status = 400;
     details = Object.fromEntries(Object.entries(err.errors).map(([field, e]) => [field, e.message]));
     message = `Validation failed: ${Object.values(details).join(', ')}`;
@@ -25,7 +17,6 @@ function errorHandler(err, req, res, next) {
     status = 400;
     message = `Invalid value for ${err.path}: ${JSON.stringify(err.value)}`;
   } else if (err.code === 11000) {
-    // Unique index violation, e.g. an email that's already registered.
     status = 409;
     const field = Object.keys(err.keyValue || {})[0] || 'field';
     message = `That ${field} is already in use`;

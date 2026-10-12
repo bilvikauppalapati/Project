@@ -1,25 +1,19 @@
-# Dependencies
 node_modules/
 
-# Secrets: only .env.example files are committed
 .env
 .env.*
 !.env.example
 
-# Uploaded images (keep the folder itself)
 server/uploads/*
 !server/uploads/.gitkeep
 
-# Build output
 dist/
 build/
 coverage/
 
-# Logs
 *.log
 npm-debug.log*
 
-# OS / editor
 .DS_Store
 .vscode/
 .idea/

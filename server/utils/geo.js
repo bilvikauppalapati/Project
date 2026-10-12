@@ -1,15 +1,10 @@
-/**
- * Straight-line ("as the crow flies") distance between two GeoJSON points, in km,
- * using the haversine formula. MongoDB computes distances itself in search queries;
- * this is for single animals and the matching score.
- */
-const EARTH_RADIUS_KM = 6378.1; // MongoDB's value; also used to convert km to radians for $centerSphere
+const EARTH_RADIUS_KM = 6378.1;
 
 function distanceKm(pointA, pointB) {
   if (!pointA?.coordinates || !pointB?.coordinates) return undefined;
   const [lng1, lat1] = pointA.coordinates;
   const [lng2, lat2] = pointB.coordinates;
-  const R = EARTH_RADIUS_KM; // same radius MongoDB uses, so distances match search results
+  const R = EARTH_RADIUS_KM;
   const toRad = (deg) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);

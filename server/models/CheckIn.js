@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const { CHECKIN_STATUSES } = require('../utils/constants');
 
-// The adopter's health update, filled in when they complete a check-in.
 const updateSchema = new mongoose.Schema(
   {
     notes: { type: String, maxlength: 2000 },
@@ -14,18 +13,13 @@ const updateSchema = new mongoose.Schema(
   { _id: false }
 );
 
-/**
- * A scheduled post-adoption check-in (1 week, 1 month, 3 months after adoption).
- * Created automatically when an application is marked "completed".
- * A daily cron job (utils/cron.js) marks check-ins as due and sends reminders.
- */
 const checkInSchema = new mongoose.Schema(
   {
     application: { type: mongoose.Schema.Types.ObjectId, ref: 'Application', required: true },
     animal: { type: mongoose.Schema.Types.ObjectId, ref: 'Animal', required: true },
     adopter: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     shelter: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    label: { type: String, required: true }, // "1 week", "1 month", "3 months"
+    label: { type: String, required: true },
     dueDate: { type: Date, required: true },
     status: { type: String, enum: CHECKIN_STATUSES, default: 'upcoming' },
     reminderSentAt: Date,

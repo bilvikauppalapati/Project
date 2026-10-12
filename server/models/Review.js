@@ -1,9 +1,5 @@
 const mongoose = require('mongoose');
 
-/**
- * A rating of a shelter by an adopter, allowed only after a completed adoption.
- * The unique index on `application` enforces "one review per adoption".
- */
 const reviewSchema = new mongoose.Schema(
   {
     shelter: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -17,10 +13,6 @@ const reviewSchema = new mongoose.Schema(
 
 reviewSchema.index({ shelter: 1, createdAt: -1 });
 
-/**
- * Recomputes a shelter's average rating and count with an aggregation pipeline
- * and stores them on the shelter's user document.
- */
 reviewSchema.statics.calcShelterRating = async function calcShelterRating(shelterId) {
   const [stats] = await this.aggregate([
     { $match: { shelter: new mongoose.Types.ObjectId(shelterId) } },
@@ -33,7 +25,6 @@ reviewSchema.statics.calcShelterRating = async function calcShelterRating(shelte
   });
 };
 
-// Keep the shelter's rating in sync whenever a review is saved.
 reviewSchema.post('save', async function updateRating() {
   await this.constructor.calcShelterRating(this.shelter);
 });

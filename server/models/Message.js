@@ -10,7 +10,6 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Message history is always loaded per conversation, oldest to newest.
 messageSchema.index({ conversation: 1, createdAt: 1 });
 
 module.exports = mongoose.model('Message', messageSchema);

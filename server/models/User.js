@@ -3,16 +3,10 @@ const bcrypt = require('bcryptjs');
 const pointSchema = require('./pointSchema');
 const { ROLES, SPECIES, SIZES, ENERGY_LEVELS, HOME_TYPES, EXPERIENCE_LEVELS } = require('../utils/constants');
 
-/**
- * One collection for all three roles (adopter, shelter, admin).
- * Role-specific data lives in `preferences` (adopters) and `shelter` (shelters).
- */
-
-// An adopter's lifestyle, used by the matching algorithm (utils/matching.js).
 const preferencesSchema = new mongoose.Schema(
   {
-    species: [{ type: String, enum: SPECIES }], // empty = any species
-    sizes: [{ type: String, enum: SIZES }], // empty = any size
+    species: [{ type: String, enum: SPECIES }],
+    sizes: [{ type: String, enum: SIZES }],
     hasKids: { type: Boolean, default: false },
     hasDogs: { type: Boolean, default: false },
     hasCats: { type: Boolean, default: false },
@@ -24,16 +18,14 @@ const preferencesSchema = new mongoose.Schema(
   { _id: false }
 );
 
-// Public profile info for shelters / caregivers.
 const shelterSchema = new mongoose.Schema(
   {
     orgName: { type: String, trim: true, maxlength: 120 },
     description: { type: String, maxlength: 2000 },
     address: { type: String, maxlength: 300 },
     website: { type: String, maxlength: 200 },
-    isVerified: { type: Boolean, default: false }, // set by an admin
+    isVerified: { type: Boolean, default: false },
     verifiedAt: Date,
-    // Kept up to date by Review.calcShelterRating() so profile pages don't need to recompute.
     ratingAverage: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
   },
@@ -51,7 +43,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Email is not valid'],
     },
-    // select: false means the hash is never returned by queries unless explicitly asked for.
     password: { type: String, required: [true, 'Password is required'], minlength: 6, select: false },
     role: { type: String, enum: ROLES, default: 'adopter' },
     phone: { type: String, trim: true, maxlength: 20 },
@@ -65,21 +56,18 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 2dsphere index enables "shelters near me" queries on the map.
 userSchema.index({ location: '2dsphere' });
 userSchema.index({ role: 1, 'shelter.isVerified': 1 });
 
-// Hash the password whenever it is set or changed. Plain-text passwords are never stored.
 userSchema.pre('save', async function hashPassword() {
   if (!this.isModified('password')) return;
-  this.password = await bcrypt.hash(this.password, 10); // 10 salt rounds
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-// Strip private fields whenever a user is sent as JSON.
 userSchema.set('toJSON', {
   transform(doc, ret) {
     delete ret.password;

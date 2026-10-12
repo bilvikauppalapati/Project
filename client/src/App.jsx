@@ -1,4 +1,3 @@
-// Placeholder screen; the real pages and routes are built in Phase 6.
 export default function App() {
   return (
     <main className="min-h-screen grid place-items-center bg-amber-50 px-4">

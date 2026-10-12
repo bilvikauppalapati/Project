@@ -2,14 +2,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 
-/**
- * protect: only lets the request through if it carries a valid JWT.
- *
- * Flow:
- *   1. The client sends `Authorization: Bearer <token>`.
- *   2. We verify the token's signature with JWT_SECRET (so it can't be forged) and its expiry.
- *   3. We load the user from the DB and attach it as `req.user` for the controllers.
- */
 async function protect(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -30,10 +22,6 @@ async function protect(req, res, next) {
   next();
 }
 
-/**
- * optionalAuth: like protect, but never rejects.
- * Used on public routes (e.g. browsing animals) that show extra info, like match %, when logged in.
- */
 async function optionalAuth(req, res, next) {
   const header = req.headers.authorization || '';
   if (header.startsWith('Bearer ')) {
@@ -41,15 +29,11 @@ async function optionalAuth(req, res, next) {
       const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET);
       req.user = await User.findById(payload.id);
     } catch {
-      // A bad token on a public route is ignored: the request continues as a guest.
     }
   }
   next();
 }
 
-/**
- * authorize('shelter', 'admin'): role-based access. Must run after protect.
- */
 function authorize(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
