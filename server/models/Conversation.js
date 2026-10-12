@@ -7,13 +7,13 @@ const conversationSchema = new mongoose.Schema(
     lastMessage: {
       text: String,
       sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-      at: Date,
     },
+    lastMessageAt: Date,
     unread: { type: Map, of: Number, default: () => ({}) },
   },
   { timestamps: true }
 );
 
-conversationSchema.index({ participants: 1, updatedAt: -1 });
+conversationSchema.index({ participants: 1, lastMessageAt: -1 });
 
 module.exports = mongoose.model('Conversation', conversationSchema);

@@ -1,6 +1,7 @@
 const express = require('express');
 const reviews = require('../controllers/reviewController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
+const { authorize } = require('../middleware/roles');
 
 const router = express.Router();
 

@@ -5,13 +5,13 @@ const { assertId } = require('../utils/validate');
 const { toBool, toNum, toList } = require('../utils/parse');
 const { notify } = require('../utils/notify');
 const { fileUrl, removeUploads } = require('../middleware/upload');
-const { CHECKIN_STATUSES } = require('../utils/constants');
+const { CHECKIN_STATUSES, MOODS } = require('../utils/constants');
 
 const populateCheckIn = (query) =>
   query
     .populate('animal', 'name species breed photos')
     .populate('adopter', 'name city')
-    .populate('shelter', 'name shelter.orgName');
+    .populate({ path: 'shelter', select: 'name', populate: { path: 'shelterProfile', select: 'organisationName type' } });
 
 function readUpdate(body = {}, file) {
   const update = {
@@ -19,7 +19,7 @@ function readUpdate(body = {}, file) {
     weightKg: toNum(body.weightKg),
     vetVisit: toBool(body.vetVisit),
     vetNotes: body.vetNotes?.trim(),
-    wellbeing: body.wellbeing || 'good',
+    mood: MOODS.includes(body.mood) ? body.mood : 'happy',
   };
   if (file) update.photo = fileUrl(file);
   if (!update.notes) throw new AppError('Please add a few notes about how the animal is doing', 400);
@@ -78,7 +78,7 @@ exports.completeCheckIn = async (req, res) => {
     if (!checkIn.adopter.equals(req.user._id)) throw new AppError('Only the adopter can complete this check-in', 403);
     if (checkIn.status === 'completed') throw new AppError('This check-in has already been completed', 409);
 
-    checkIn.update = readUpdate(req.body, req.file);
+    checkIn.healthUpdate = readUpdate(req.body, req.file);
     checkIn.status = 'completed';
     checkIn.completedAt = new Date();
     await checkIn.save();
@@ -86,7 +86,7 @@ exports.completeCheckIn = async (req, res) => {
     await notify(checkIn.shelter, {
       type: 'checkin',
       title: `${checkIn.label} check-in: ${checkIn.animal.name}`,
-      message: `${req.user.name} says ${checkIn.animal.name} is doing ${checkIn.update.wellbeing}.`,
+      body: `${req.user.name} says ${checkIn.animal.name} is feeling ${checkIn.healthUpdate.mood}.`,
       link: `/checkins/${checkIn._id}`,
     });
 
@@ -115,13 +115,13 @@ exports.logHealthUpdate = async (req, res) => {
       dueDate: now,
       status: 'completed',
       completedAt: now,
-      update: readUpdate(req.body, req.file),
+      healthUpdate: readUpdate(req.body, req.file),
     });
 
     await notify(app.shelter, {
       type: 'checkin',
       title: `Health update: ${app.animal.name}`,
-      message: `${req.user.name} shared a new update.`,
+      body: `${req.user.name} shared a new update.`,
       link: `/checkins/${checkIn._id}`,
     });
 

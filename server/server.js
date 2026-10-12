@@ -2,8 +2,8 @@ require('dotenv').config({ quiet: true });
 const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/db');
-const { initSocket } = require('./utils/socket');
-const { startCronJobs } = require('./utils/cron');
+const { initSocket } = require('./socket');
+const { startCronJobs } = require('./utils/scheduler');
 
 const PORT = process.env.PORT || 5001;
 

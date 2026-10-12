@@ -1,8 +1,6 @@
 const CheckIn = require('../models/CheckIn');
-const User = require('../models/User');
 const Animal = require('../models/Animal');
 const { notify } = require('./notify');
-const { sendEmail } = require('./email');
 const { CHECKIN_SCHEDULE } = require('./constants');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -29,10 +27,7 @@ async function sendDueReminders(now = new Date()) {
   });
 
   for (const checkIn of dueSoon) {
-    const [adopter, animal] = await Promise.all([
-      User.findById(checkIn.adopter).select('name email'),
-      Animal.findById(checkIn.animal).select('name'),
-    ]);
+    const animal = await Animal.findById(checkIn.animal).select('name');
     const name = animal?.name || 'your pet';
 
     checkIn.status = 'due';
@@ -42,17 +37,10 @@ async function sendDueReminders(now = new Date()) {
     await notify(checkIn.adopter, {
       type: 'checkin',
       title: `${checkIn.label} check-in for ${name} is due`,
-      message: `Tell the shelter how ${name} is doing: notes, weight, a photo and any vet visits.`,
+      body: `Please share how ${name} is doing: notes, weight, mood, a photo and any vet visits.`,
       link: `/checkins/${checkIn._id}`,
+      email: true,
     });
-
-    if (adopter?.email) {
-      await sendEmail({
-        to: adopter.email,
-        subject: `PawShare: ${checkIn.label} check-in for ${name}`,
-        text: `Hi ${adopter.name},\n\nIt's time for ${name}'s ${checkIn.label} check-in (due ${checkIn.dueDate.toDateString()}).\nPlease log in to PawShare and share a quick health update.\n\nThank you for giving ${name} a home!`,
-      });
-    }
   }
   return dueSoon.length;
 }
@@ -70,8 +58,9 @@ async function markMissed(now = new Date()) {
     await notify(checkIn.shelter, {
       type: 'checkin',
       title: `Missed check-in: ${animal?.name || 'animal'}`,
-      message: `The ${checkIn.label} check-in is more than ${MISSED_AFTER_DAYS} days overdue. You may want to message the adopter.`,
+      body: `The ${checkIn.label} check-in is more than ${MISSED_AFTER_DAYS} days overdue. You may want to message the adopter.`,
       link: `/checkins/${checkIn._id}`,
+      email: true,
     });
   }
   return overdue.length;

@@ -13,16 +13,19 @@ const reviewSchema = new mongoose.Schema(
 
 reviewSchema.index({ shelter: 1, createdAt: -1 });
 
-reviewSchema.statics.calcShelterRating = async function calcShelterRating(shelterId) {
+reviewSchema.statics.calcShelterRating = async function calcShelterRating(shelterUserId) {
   const [stats] = await this.aggregate([
-    { $match: { shelter: new mongoose.Types.ObjectId(shelterId) } },
+    { $match: { shelter: new mongoose.Types.ObjectId(String(shelterUserId)) } },
     { $group: { _id: '$shelter', avg: { $avg: '$rating' }, count: { $sum: 1 } } },
   ]);
 
-  await mongoose.model('User').findByIdAndUpdate(shelterId, {
-    'shelter.ratingAverage': stats ? Math.round(stats.avg * 10) / 10 : 0,
-    'shelter.ratingCount': stats ? stats.count : 0,
-  });
+  await mongoose.model('ShelterProfile').updateOne(
+    { user: shelterUserId },
+    {
+      averageRating: stats ? Math.round(stats.avg * 10) / 10 : 0,
+      reviewCount: stats ? stats.count : 0,
+    }
+  );
 };
 
 reviewSchema.post('save', async function updateRating() {

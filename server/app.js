@@ -11,7 +11,7 @@ const checkInRoutes = require('./routes/checkInRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const shelterRoutes = require('./routes/shelterRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const { notFound, errorHandler } = require('./middleware/error');
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 const constants = require('./utils/constants');
 
 const app = express();

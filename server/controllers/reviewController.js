@@ -1,6 +1,6 @@
 const Review = require('../models/Review');
 const Application = require('../models/Application');
-const User = require('../models/User');
+const ShelterProfile = require('../models/ShelterProfile');
 const AppError = require('../utils/AppError');
 const { assertId } = require('../utils/validate');
 const { toNum, pagination } = require('../utils/parse');
@@ -34,7 +34,7 @@ exports.createReview = async (req, res) => {
   await notify(app.shelter, {
     type: 'review',
     title: `New ${rating}-star review`,
-    message: `${req.user.name} reviewed the adoption of ${app.animal?.name || 'an animal'}.`,
+    body: `${req.user.name} reviewed the adoption of ${app.animal?.name || 'an animal'}.`,
     link: `/shelters/${app.shelter}`,
   });
 
@@ -60,7 +60,7 @@ exports.shelterReviews = async (req, res) => {
 exports.myReviews = async (req, res) => {
   const reviews = await Review.find({ adopter: req.user._id })
     .sort({ createdAt: -1 })
-    .populate('shelter', 'name shelter.orgName');
+    .populate({ path: 'shelter', select: 'name', populate: { path: 'shelterProfile', select: 'organisationName' } });
   res.json({ success: true, reviews });
 };
 
@@ -86,6 +86,6 @@ exports.deleteReview = async (req, res) => {
   }
   await review.deleteOne();
   await Review.calcShelterRating(review.shelter);
-  const shelter = await User.findById(review.shelter).select('shelter.ratingAverage shelter.ratingCount');
-  res.json({ success: true, rating: shelter?.shelter });
+  const profile = await ShelterProfile.findOne({ user: review.shelter }).select('averageRating reviewCount');
+  res.json({ success: true, rating: profile });
 };

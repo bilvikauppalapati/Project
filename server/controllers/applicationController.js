@@ -1,14 +1,13 @@
 const Application = require('../models/Application');
 const Animal = require('../models/Animal');
+const ShelterProfile = require('../models/ShelterProfile');
 const AppError = require('../utils/AppError');
 const { assertId } = require('../utils/validate');
 const { toBool, toNum, toList, pagination } = require('../utils/parse');
 const { matchAnimal } = require('../utils/matching');
 const { notify } = require('../utils/notify');
 const { scheduleCheckIns } = require('../utils/checkins');
-const { APPLICATION_STATUSES } = require('../utils/constants');
-
-const ACTIVE = ['submitted', 'under_review', 'approved'];
+const { APPLICATION_STATUSES, ACTIVE_APPLICATION_STATUSES } = require('../utils/constants');
 
 const TRANSITIONS = {
   submitted: ['under_review', 'approved', 'rejected', 'withdrawn'],
@@ -32,9 +31,8 @@ function readQuestionnaire(input = {}) {
   return {
     homeType: input.homeType,
     hasYard: toBool(input.hasYard),
-    otherPets: input.otherPets || 'None',
     hasKids: toBool(input.hasKids),
-    kidsAges: input.kidsAges,
+    otherPets: input.otherPets || 'None',
     experience: input.experience,
     workHoursPerDay: toNum(input.workHoursPerDay),
     reason: input.reason,
@@ -58,7 +56,8 @@ const populateApp = (query) =>
   query
     .populate('animal', 'name species breed ageMonths size photos status listingType city')
     .populate('adopter', 'name email phone city preferences')
-    .populate('shelter', 'name email phone city shelter.orgName shelter.isVerified');
+    .populate({ path: 'shelter', select: 'name email phone city', populate: { path: 'shelterProfile', select: 'organisationName type isVerified averageRating reviewCount contactEmail contactPhone' } })
+    .populate('statusHistory.changedBy', 'name role');
 
 exports.createApplication = async (req, res) => {
   const body = req.body || {};
@@ -67,13 +66,16 @@ exports.createApplication = async (req, res) => {
   if (!['adoption', 'foster'].includes(type)) throw new AppError('type must be adoption or foster', 400);
 
   const animal = await Animal.findById(body.animalId);
-  if (!animal) throw new AppError('Animal not found', 404);
+  if (!animal || !animal.isActive) throw new AppError('Animal not found', 404);
   if (animal.status !== 'available') throw new AppError(`${animal.name} is no longer available`, 409);
   if (animal.listingType !== 'both' && animal.listingType !== type) {
     throw new AppError(`${animal.name} is listed for ${animal.listingType} only`, 400);
   }
+  if (type === 'foster' && !String(body.fosterDuration || '').trim()) {
+    throw new AppError('Please say how long you can foster for', 400);
+  }
 
-  const duplicate = await Application.exists({ animal: animal._id, adopter: req.user._id, status: { $in: ACTIVE } });
+  const duplicate = await Application.exists({ animal: animal._id, adopter: req.user._id, status: { $in: ACTIVE_APPLICATION_STATUSES } });
   if (duplicate) throw new AppError(`You already have an active application for ${animal.name}`, 409);
 
   const { score } = matchAnimal(req.user, animal);
@@ -83,16 +85,18 @@ exports.createApplication = async (req, res) => {
     adopter: req.user._id,
     shelter: animal.shelter,
     type,
+    fosterDuration: type === 'foster' ? String(body.fosterDuration).trim() : undefined,
     questionnaire: readQuestionnaire(body.questionnaire),
     matchScore: score,
-    timeline: [{ status: 'submitted', by: req.user._id, note: 'Application submitted' }],
+    statusHistory: [{ status: 'submitted', changedBy: req.user._id, note: 'Application submitted' }],
   });
 
   await notify(animal.shelter, {
     type: 'application',
     title: `New ${type} application for ${animal.name}`,
-    message: `${req.user.name} applied (${score}% match).`,
+    body: `${req.user.name} applied (${score}% match).`,
     link: `/applications/${app._id}`,
+    email: true,
   });
 
   res.status(201).json({ success: true, application: await populateApp(Application.findById(app._id)) });
@@ -126,8 +130,7 @@ exports.incomingApplications = async (req, res) => {
 
 exports.getApplication = async (req, res) => {
   const { app } = await loadApplication(req.params.id, req.user);
-  const application = await populateApp(Application.findById(app._id)).populate('timeline.by', 'name role');
-  res.json({ success: true, application });
+  res.json({ success: true, application: await populateApp(Application.findById(app._id)) });
 };
 
 async function applySideEffects(app, next, actor) {
@@ -148,18 +151,20 @@ async function applySideEffects(app, next, actor) {
     animal.status = app.type === 'foster' ? 'fostered' : 'adopted';
     await animal.save();
     app.completedAt = new Date();
+    await ShelterProfile.updateOne({ user: app.shelter }, { $inc: { adoptionCount: 1 } });
 
-    const others = await Application.find({ animal: animal._id, _id: { $ne: app._id }, status: { $in: ACTIVE } });
+    const others = await Application.find({ animal: animal._id, _id: { $ne: app._id }, status: { $in: ACTIVE_APPLICATION_STATUSES } });
     for (const other of others) {
       other.status = 'rejected';
-      other.shelterNote = `${animal.name} has found a home with another family.`;
-      other.timeline.push({ status: 'rejected', by: actor._id, note: other.shelterNote });
+      other.shelterNotes = `${animal.name} has found a home with another family.`;
+      other.statusHistory.push({ status: 'rejected', changedBy: actor._id, note: other.shelterNotes });
       await other.save();
       await notify(other.adopter, {
         type: 'application',
         title: `Update on ${animal.name}`,
-        message: other.shelterNote,
+        body: other.shelterNotes,
         link: `/applications/${other._id}`,
+        email: true,
       });
     }
   }
@@ -190,8 +195,8 @@ exports.updateStatus = async (req, res) => {
   await applySideEffects(app, next, req.user);
 
   app.status = next;
-  if (body.note && !isAdopter) app.shelterNote = body.note;
-  app.timeline.push({ status: next, by: req.user._id, note: body.note });
+  if (body.note && !isAdopter) app.shelterNotes = body.note;
+  app.statusHistory.push({ status: next, changedBy: req.user._id, note: body.note });
   await app.save();
   if (next === 'completed') await scheduleCheckIns(app);
 
@@ -200,12 +205,10 @@ exports.updateStatus = async (req, res) => {
   await notify(recipient, {
     type: 'application',
     title: `Application ${STATUS_LABELS[next].toLowerCase()}: ${animal?.name || 'animal'}`,
-    message: body.note || `The application is now "${STATUS_LABELS[next]}".`,
+    body: body.note || `The application is now "${STATUS_LABELS[next]}".`,
     link: `/applications/${app._id}`,
+    email: true,
   });
 
-  const application = await populateApp(Application.findById(app._id)).populate('timeline.by', 'name role');
-  res.json({ success: true, application });
+  res.json({ success: true, application: await populateApp(Application.findById(app._id)) });
 };
-
-module.exports.ACTIVE_STATUSES = ACTIVE;

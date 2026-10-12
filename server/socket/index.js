@@ -1,18 +1,19 @@
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
-const User = require('../models/User');
+const { loadUser } = require('../middleware/auth');
 const Conversation = require('../models/Conversation');
-const { sendMessage, markConversationRead, loadConversation } = require('./chat');
-const { setIO, userRoom, conversationRoom, markOnline, markOffline, emitToUser } = require('./realtime');
+const { sendMessage, markConversationRead, loadConversation } = require('../utils/chat');
+const { setIO, userRoom, conversationRoom, markOnline, markOffline, emitToUser } = require('../utils/realtime');
 
 async function authenticate(socket, next) {
   try {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Not logged in'));
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(payload.id);
+    const user = await loadUser(payload.id);
     if (!user) return next(new Error('User no longer exists'));
     socket.user = user;
+    socket.data.userId = String(user._id);
     next();
   } catch {
     next(new Error('Invalid or expired token'));

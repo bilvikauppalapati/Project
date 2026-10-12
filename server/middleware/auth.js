@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 
+const loadUser = (id) => User.findById(id).populate('shelterProfile');
+
 async function protect(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -15,7 +17,7 @@ async function protect(req, res, next) {
     throw new AppError(msg, 401);
   }
 
-  const user = await User.findById(payload.id);
+  const user = await loadUser(payload.id);
   if (!user) throw new AppError('The user for this token no longer exists.', 401);
 
   req.user = user;
@@ -27,20 +29,12 @@ async function optionalAuth(req, res, next) {
   if (header.startsWith('Bearer ')) {
     try {
       const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET);
-      req.user = await User.findById(payload.id);
+      req.user = await loadUser(payload.id);
     } catch {
+      req.user = undefined;
     }
   }
   next();
 }
 
-function authorize(...roles) {
-  return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      throw new AppError(`This action requires role: ${roles.join(' or ')}`, 403);
-    }
-    next();
-  };
-}
-
-module.exports = { protect, optionalAuth, authorize };
+module.exports = { protect, optionalAuth, loadUser };

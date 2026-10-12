@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
+    "dev": "nodemon server.js",
     "seed": "node seed.js"
   },
   "keywords": [],
@@ -23,5 +23,14 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^10.1.0",
     "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "uploads/*",
+      "seed-images/*"
+    ]
   }
 }

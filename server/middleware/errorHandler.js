@@ -22,7 +22,7 @@ function errorHandler(err, req, res, next) {
     message = `That ${field} is already in use`;
   } else if (err.name === 'MulterError') {
     status = 400;
-    message = err.code === 'LIMIT_FILE_SIZE' ? 'Image too large (max 5 MB)' : err.message;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'Image too large (max 5 MB)' : err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE' ? 'Too many photos (max 5)' : err.message;
   } else if (err.type === 'entity.parse.failed') {
     status = 400;
     message = 'Request body is not valid JSON';

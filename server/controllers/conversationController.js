@@ -7,11 +7,13 @@ const { assertId } = require('../utils/validate');
 const { toNum } = require('../utils/parse');
 const { loadConversation, sendMessage, markConversationRead, serializeConversation } = require('../utils/chat');
 
-const PARTICIPANT_FIELDS = 'name role avatar city shelter.orgName shelter.isVerified';
+const PARTICIPANT_FIELDS = 'name role avatar city';
 const ANIMAL_FIELDS = 'name species photos status';
 
 const populateConversation = (query) =>
-  query.populate('participants', PARTICIPANT_FIELDS).populate('animal', ANIMAL_FIELDS);
+  query
+    .populate({ path: 'participants', select: PARTICIPANT_FIELDS, populate: { path: 'shelterProfile', select: 'organisationName type isVerified' } })
+    .populate('animal', ANIMAL_FIELDS);
 
 function canChat(a, b) {
   if (a.role === 'admin' || b.role === 'admin') return true;
@@ -57,7 +59,7 @@ exports.startConversation = async (req, res) => {
 
 exports.listConversations = async (req, res) => {
   const conversations = await populateConversation(
-    Conversation.find({ participants: req.user._id }).sort({ updatedAt: -1 })
+    Conversation.find({ participants: req.user._id }).sort({ lastMessageAt: -1, updatedAt: -1 })
   );
   res.json({ success: true, conversations: conversations.map((c) => serializeConversation(c, req.user._id)) });
 };

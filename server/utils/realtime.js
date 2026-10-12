@@ -12,6 +12,12 @@ function emitToUser(userId, event, payload) {
   if (io) io.to(userRoom(String(userId))).emit(event, payload);
 }
 
+async function isUserInConversation(userId, conversationId) {
+  if (!io) return false;
+  const sockets = await io.in(conversationRoom(String(conversationId))).fetchSockets();
+  return sockets.some((s) => String(s.data.userId) === String(userId));
+}
+
 function markOnline(userId) {
   const id = String(userId);
   onlineSockets.set(id, (onlineSockets.get(id) || 0) + 1);
@@ -28,4 +34,4 @@ function markOffline(userId) {
 
 const isOnline = (userId) => onlineSockets.has(String(userId));
 
-module.exports = { setIO, emitToUser, userRoom, conversationRoom, markOnline, markOffline, isOnline };
+module.exports = { setIO, emitToUser, userRoom, conversationRoom, isUserInConversation, markOnline, markOffline, isOnline };

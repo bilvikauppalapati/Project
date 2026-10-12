@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
-const { CHECKIN_STATUSES } = require('../utils/constants');
+const { CHECKIN_STATUSES, MOODS } = require('../utils/constants');
 
-const updateSchema = new mongoose.Schema(
+const healthUpdateSchema = new mongoose.Schema(
   {
     notes: { type: String, maxlength: 2000 },
     weightKg: { type: Number, min: 0, max: 200 },
-    photo: String,
     vetVisit: { type: Boolean, default: false },
     vetNotes: { type: String, maxlength: 1000 },
-    wellbeing: { type: String, enum: ['great', 'good', 'concerns'], default: 'good' },
+    photo: String,
+    mood: { type: String, enum: MOODS, default: 'happy' },
   },
   { _id: false }
 );
@@ -23,7 +23,7 @@ const checkInSchema = new mongoose.Schema(
     dueDate: { type: Date, required: true },
     status: { type: String, enum: CHECKIN_STATUSES, default: 'upcoming' },
     reminderSentAt: Date,
-    update: updateSchema,
+    healthUpdate: healthUpdateSchema,
     completedAt: Date,
   },
   { timestamps: true }

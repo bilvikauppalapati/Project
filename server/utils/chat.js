@@ -3,7 +3,7 @@ const Message = require('../models/Message');
 const AppError = require('./AppError');
 const { assertId } = require('./validate');
 const { notify } = require('./notify');
-const { emitToUser, isOnline } = require('./realtime');
+const { emitToUser, isOnline, isUserInConversation } = require('./realtime');
 
 const MAX_LENGTH = 2000;
 
@@ -32,32 +32,26 @@ async function sendMessage(user, conversationId, rawText) {
     readBy: [user._id],
   });
 
-  const wasUnread = Object.fromEntries(recipients.map((r) => [String(r), conversation.unread.get(String(r)) || 0]));
-
   const inc = Object.fromEntries(recipients.map((r) => [`unread.${r}`, 1]));
   const updated = await Conversation.findByIdAndUpdate(
     conversation._id,
-    { $set: { lastMessage: { text, sender: user._id, at: message.createdAt } }, $inc: inc },
+    { $set: { lastMessage: { text, sender: user._id }, lastMessageAt: message.createdAt }, $inc: inc },
     { returnDocument: 'after' }
   );
 
   const payload = { message: message.toObject(), conversationId: String(conversation._id) };
   for (const participant of conversation.participants) {
-    emitToUser(participant, 'message:new', {
-      ...payload,
-      unread: updated.unread.get(String(participant)) || 0,
-    });
+    emitToUser(participant, 'message:new', { ...payload, unread: updated.unread.get(String(participant)) || 0 });
   }
 
   for (const recipient of recipients) {
-    if (wasUnread[String(recipient)] === 0) {
-      await notify(recipient, {
-        type: 'message',
-        title: `New message from ${user.name}`,
-        message: text.length > 80 ? `${text.slice(0, 77)}...` : text,
-        link: `/messages/${conversation._id}`,
-      });
-    }
+    if (await isUserInConversation(recipient, conversation._id)) continue;
+    await notify(recipient, {
+      type: 'message',
+      title: `New message from ${user.shelterProfile?.organisationName || user.name}`,
+      body: text.length > 80 ? `${text.slice(0, 77)}...` : text,
+      link: `/messages/${conversation._id}`,
+    });
   }
 
   return message;
@@ -68,29 +62,23 @@ async function markConversationRead(user, conversationId) {
 
   await Promise.all([
     Conversation.updateOne({ _id: conversation._id }, { $set: { [`unread.${user._id}`]: 0 } }),
-    Message.updateMany(
-      { conversation: conversation._id, readBy: { $ne: user._id } },
-      { $addToSet: { readBy: user._id } }
-    ),
+    Message.updateMany({ conversation: conversation._id, readBy: { $ne: user._id } }, { $addToSet: { readBy: user._id } }),
   ]);
 
   for (const participant of conversation.participants) {
-    emitToUser(participant, 'conversation:read', {
-      conversationId: String(conversation._id),
-      readerId: String(user._id),
-    });
+    emitToUser(participant, 'conversation:read', { conversationId: String(conversation._id), readerId: String(user._id) });
   }
 }
 
 function serializeConversation(conversation, userId) {
-  const c = conversation.toObject ? conversation.toObject() : conversation;
+  const c = conversation.toObject ? conversation.toObject({ virtuals: true }) : conversation;
   const other = (c.participants || []).find((p) => String(p._id || p) !== String(userId));
   const unread = c.unread instanceof Map ? c.unread.get(String(userId)) : c.unread?.[String(userId)];
   return {
     _id: c._id,
     animal: c.animal,
     lastMessage: c.lastMessage,
-    updatedAt: c.updatedAt,
+    lastMessageAt: c.lastMessageAt,
     createdAt: c.createdAt,
     participants: c.participants,
     otherUser: other ? { ...other, online: isOnline(other._id || other) } : null,

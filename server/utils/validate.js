@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const AppError = require('./AppError');
+const { PASSWORD_RULE, PASSWORD_MESSAGE } = require('./constants');
 
 function requireFields(body, fields) {
   const missing = fields.filter((f) => body[f] === undefined || body[f] === null || String(body[f]).trim() === '');
@@ -26,4 +27,8 @@ function toGeoPoint(lat, lng) {
   return { type: 'Point', coordinates: [lngN, latN] };
 }
 
-module.exports = { requireFields, isEmail, isValidId, assertId, toGeoPoint };
+function assertPassword(password) {
+  if (!PASSWORD_RULE.test(String(password || ''))) throw new AppError(PASSWORD_MESSAGE, 400);
+}
+
+module.exports = { requireFields, isEmail, isValidId, assertId, toGeoPoint, assertPassword };
