@@ -121,13 +121,14 @@ SERVER_PID=$!
 (cd client && npx vite --port $WEB_PORT --strictPort >"$LOG_DIR/client.log" 2>&1) &
 CLIENT_PID=$!
 echo "$SERVER_PID $CLIENT_PID" >"$LOG_DIR/pids"
+echo $$ >"$LOG_DIR/start.pid"
 
 cleanup() {
   echo -e "\n${BOLD}Stopping PawShare...${RESET}"
   kill $SERVER_PID $CLIENT_PID 2>/dev/null
   pkill -P $SERVER_PID 2>/dev/null; pkill -P $CLIENT_PID 2>/dev/null
   for port in $API_PORT $WEB_PORT; do lsof -ti tcp:$port 2>/dev/null | xargs kill 2>/dev/null; done
-  rm -f "$LOG_DIR/pids"
+  rm -f "$LOG_DIR/pids" "$LOG_DIR/start.pid"
   ok "Stopped. Bye! 🐾"
   exit 0
 }
