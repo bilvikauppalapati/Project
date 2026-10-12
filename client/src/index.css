@@ -1,2 +1,95 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Kalam", "Comic Sans MS", "Chalkboard SE", cursive;
+
+  --color-cream: #fbf7f0;
+  --color-cream-dark: #f3ece0;
+  --color-sand: #efe6d6;
+  --color-forest: #1f3b33;
+  --color-forest-light: #2d5246;
+  --color-forest-dark: #162b25;
+  --color-sun: #f6c065;
+  --color-sun-dark: #eeab3d;
+  --color-clay: #f0a04b;
+  --color-clay-dark: #d9863a;
+  --color-ink: #2b2b2b;
+  --color-muted: #6b6b63;
+}
+
+@layer base {
+  html {
+    background: var(--color-cream);
+  }
+  body {
+    @apply bg-cream text-ink font-sans antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-display text-forest;
+  }
+  input, select, textarea {
+    @apply font-sans;
+  }
+}
+
+@utility container-page {
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply btn bg-forest text-white hover:bg-forest-light;
+}
+
+@utility btn-accent {
+  @apply btn bg-clay text-white shadow-sm hover:bg-clay-dark;
+}
+
+@utility btn-sun {
+  @apply btn bg-sun text-forest shadow-md hover:bg-sun-dark;
+}
+
+@utility btn-outline {
+  @apply btn border-2 border-forest/20 bg-white text-forest hover:border-forest/50;
+}
+
+@utility btn-ghost {
+  @apply btn text-forest hover:bg-forest/5;
+}
+
+@utility btn-danger {
+  @apply btn bg-red-600 text-white hover:bg-red-700;
+}
+
+@utility card {
+  @apply rounded-2xl border border-black/5 bg-white shadow-sm;
+}
+
+@utility label {
+  @apply mb-1 block text-sm font-bold text-forest;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-muted/70 focus:border-clay focus:ring-2 focus:ring-clay/25;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold;
+}
+
+@utility section-title {
+  @apply font-display text-3xl font-bold text-forest sm:text-4xl;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  border-radius: 1rem;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.9rem;
+}

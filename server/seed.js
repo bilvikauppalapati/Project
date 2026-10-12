@@ -47,11 +47,11 @@ function photo(name) {
 }
 
 async function createUser(data) {
-  return User.create({ password: PASSWORD, ...data });
+  return User.create({ password: PASSWORD, createdAt: daysAgo(150), ...data });
 }
 
-async function createShelter({ name, email, phone, place, organisationName, type, description, address, isVerified, website }) {
-  const user = await createUser({ name, email, phone, role: 'shelter', city: place.city, location: point(place.lat, place.lng) });
+async function createShelter({ name, email, phone, place, organisationName, type, description, address, isVerified, website, joinedDaysAgo = 200 }) {
+  const user = await createUser({ name, email, phone, role: 'shelter', city: place.city, location: point(place.lat, place.lng), createdAt: daysAgo(joinedDaysAgo) });
   await ShelterProfile.create({
     user: user._id,
     organisationName,
@@ -153,6 +153,7 @@ async function main() {
     description: 'A new volunteer group rescuing puppies and kittens around KPHB. Awaiting verification.',
     address: 'KPHB Colony, Kukatpally, Hyderabad 500072',
     isVerified: false,
+    joinedDaysAgo: 5,
   });
 
   const asha = await createUser({
@@ -259,6 +260,7 @@ async function main() {
       matchScore: matchAnimal(adopter, animal).score,
       completedAt: last.status === 'completed' ? last.changedAt : undefined,
       createdAt: history[0].changedAt,
+      updatedAt: last.changedAt,
     });
   }
 
@@ -274,7 +276,7 @@ async function main() {
   });
   lunaApp.completedAt = daysAgo(29);
   lunaApp.statusHistory[lunaApp.statusHistory.length - 1].changedAt = daysAgo(29);
-  await lunaApp.save();
+  await lunaApp.save({ timestamps: false });
 
   const pepperApp = await application({
     adopter: user,
@@ -377,10 +379,10 @@ async function main() {
   await lunaWeek.save();
   await CheckIn.updateOne({ application: lunaApp._id, label: '1 month' }, { status: 'due', reminderSentAt: daysAgo(0) });
 
-  await Review.create({ shelter: care._id, adopter: user._id, application: lunaApp._id, rating: 5, comment: 'Wonderful caregiver! Luna came home healthy, vaccinated and so well socialised.' });
-  await Review.create({ shelter: care._id, adopter: ravi._id, application: mittensApp._id, rating: 4, comment: 'Very helpful and quick to answer questions about fostering.' });
-  await Review.create({ shelter: happyTails._id, adopter: asha._id, application: daisyApp._id, rating: 5, comment: 'Smooth process and very caring staff.' });
-  await Review.create({ shelter: secShelter._id, adopter: meera._id, application: cloudApp._id, rating: 4, comment: 'Cloud is perfect. The home visit took a while but was worth it.' });
+  await Review.create({ shelter: care._id, adopter: user._id, application: lunaApp._id, rating: 5, comment: 'Wonderful caregiver! Luna came home healthy, vaccinated and so well socialised.', createdAt: daysAgo(20) });
+  await Review.create({ shelter: care._id, adopter: ravi._id, application: mittensApp._id, rating: 4, comment: 'Very helpful and quick to answer questions about fostering.', createdAt: daysAgo(8) });
+  await Review.create({ shelter: happyTails._id, adopter: asha._id, application: daisyApp._id, rating: 5, comment: 'Smooth process and very caring staff.', createdAt: daysAgo(55) });
+  await Review.create({ shelter: secShelter._id, adopter: meera._id, application: cloudApp._id, rating: 4, comment: 'Cloud is perfect. The home visit took a while but was worth it.', createdAt: daysAgo(80) });
 
   for (const [userId, count] of [
     [care._id, 2],

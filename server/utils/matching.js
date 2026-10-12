@@ -113,7 +113,12 @@ function matchAnimal(adopter, animal, km) {
     experience: experienceFactor(prefs, animal),
   };
 
-  const breakdown = Object.entries(factors).map(([factor, f]) => ({ factor, max: WEIGHTS[factor], ...f }));
+  const breakdown = Object.entries(factors).map(([factor, f]) => ({
+    factor,
+    max: WEIGHTS[factor],
+    ...f,
+    reason: f.reason.charAt(0).toUpperCase() + f.reason.slice(1),
+  }));
   const score = breakdown.reduce((sum, f) => sum + f.points, 0);
   const reasons = breakdown
     .filter((f) => f.good && f.points === f.max && !/^No |^Open to|^Good for first/.test(f.reason))

@@ -4,7 +4,7 @@ function notFound(req, res, next) {
   next(new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404));
 }
 
-function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res, _next) {
   let status = err.statusCode || 500;
   let message = err.message || 'Something went wrong';
   let details = err.details;
