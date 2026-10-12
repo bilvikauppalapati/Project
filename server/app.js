@@ -5,6 +5,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const animalRoutes = require('./routes/animalRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { notFound, errorHandler } = require('./middleware/error');
 const constants = require('./utils/constants');
 
@@ -23,6 +25,8 @@ app.get('/api/meta', (req, res) => res.json({ success: true, ...constants }));
 app.use('/api/auth', authRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

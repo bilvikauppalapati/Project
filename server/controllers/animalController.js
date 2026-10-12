@@ -303,7 +303,7 @@ exports.toggleFavourite = async (req, res) => {
 
   const isFav = req.user.favourites.some((f) => f.equals(req.params.id));
   const update = isFav ? { $pull: { favourites: req.params.id } } : { $addToSet: { favourites: req.params.id } };
-  const user = await User.findByIdAndUpdate(req.user._id, update, { new: true });
+  const user = await User.findByIdAndUpdate(req.user._id, update, { returnDocument: 'after' });
 
   res.json({ success: true, favourited: !isFav, favourites: user.favourites });
 };

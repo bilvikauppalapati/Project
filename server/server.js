@@ -1,7 +1,8 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/db');
+const { initSocket } = require('./utils/socket');
 
 const PORT = process.env.PORT || 5001;
 
@@ -14,9 +15,10 @@ async function start() {
   await connectDB();
 
   const server = http.createServer(app);
+  initSocket(server);
 
   server.listen(PORT, () => {
-    console.log(`PawShare API running at http://localhost:${PORT}`);
+    console.log(`PawShare API + socket.io running at http://localhost:${PORT}`);
   });
 }
 
