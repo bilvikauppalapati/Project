@@ -49,7 +49,5 @@ animalSchema.index({ location: '2dsphere' });
 // Speeds up the most common filters.
 animalSchema.index({ status: 1, species: 1, size: 1 });
 animalSchema.index({ shelter: 1, createdAt: -1 });
-// Text index for the free-text search box (name, breed, description).
-animalSchema.index({ name: 'text', breed: 'text', description: 'text' });
 
 module.exports = mongoose.model('Animal', animalSchema);

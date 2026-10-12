@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
+const animalRoutes = require('./routes/animalRoutes');
 const { notFound, errorHandler } = require('./middleware/error');
 const constants = require('./utils/constants');
 
@@ -25,6 +26,7 @@ app.get('/api/health', (req, res) => res.json({ success: true, status: 'ok', tim
 app.get('/api/meta', (req, res) => res.json({ success: true, ...constants }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/animals', animalRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
